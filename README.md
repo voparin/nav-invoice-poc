@@ -8,7 +8,7 @@ signing and token decryption per the Online Számla REST API **v3.0** specificat
 It submits **four invoice types** in one run:
 
 1. **CREATE** — domestic supply of goods (*belföldi termékértékesítés*), 27% VAT
-2. **CREATE** — intra-Community acquisition of goods (*közösségen belüli termékbeszerzés*), out-of-scope VAT
+2. **CREATE** — intra-Community supply of goods (*közösségen belüli termékértékesítés*), VAT-exempt (KBAET)
 3. **MODIFY** — a modifying invoice (*módosító számla*) referencing invoice #1
 4. **STORNO** — an invalidating invoice (*érvénytelenítő számla*) referencing invoice #2
 
@@ -17,6 +17,19 @@ Each submission prints the `transactionId` returned by NAV.
 > ⚠️ **Test environment only.** This talks to `https://api-test.onlineszamla.nav.gov.hu`.
 > Nothing here reaches NAV's production system; invoices submitted here are not real
 > filings.
+
+---
+
+## Download
+
+- **Latest release (always current):**
+  <https://github.com/voparin/nav-invoice-poc/releases/latest>
+- **Direct jar download (latest):**
+  <https://github.com/voparin/nav-invoice-poc/releases/latest/download/nav-invoice-poc.jar>
+
+Grab the `nav-invoice-poc.jar` from the release's **Assets**, then follow the steps below.
+(Commands use `nav-invoice-poc.jar`; the versioned asset `nav-invoice-poc-1.3.0.jar` is the
+same file.)
 
 ---
 
@@ -86,7 +99,7 @@ nav.softwareDevContact=you@example.com
 ## 4. Run
 
 ```bash
-java -jar nav-invoice-poc-1.3.0.jar config.properties
+java -jar nav-invoice-poc.jar config.properties
 ```
 
 (If you omit the argument it defaults to `config.properties` in the current directory.)
@@ -98,7 +111,7 @@ Step 1: Requesting exchange token...
   token valid to: 2026-10-03T13:05:00.000Z
 Step 2: CREATE domestic goods invoice POC-D-1759...
   [CREATE domestic] transactionId = 4ABC123DEF456...
-Step 3: CREATE intra-Community acquisition invoice POC-I-1759...
+Step 3: CREATE intra-Community supply invoice POC-I-1759...
   [CREATE intra-Community] transactionId = 4ABC123DEF457...
 Step 4: MODIFY invoice POC-M-1759... (references POC-D-1759...)
   [MODIFY] transactionId = 4ABC123DEF458...
@@ -113,7 +126,7 @@ background and the final verdict is `DONE` (accepted) or `ABORTED` (rejected). C
 with the built-in status command:
 
 ```bash
-java -jar nav-invoice-poc-1.3.0.jar status <transactionId> config.properties
+java -jar nav-invoice-poc.jar status <transactionId> config.properties
 ```
 
 This prints each invoice's status plus any technical/business validation messages — the
@@ -127,7 +140,7 @@ To confirm invoices are actually stored on NAV's side — independent of the (un
 test web UI — list the outbound invoices NAV has for your taxpayer:
 
 ```bash
-java -jar nav-invoice-poc-1.3.0.jar digest [days] config.properties
+java -jar nav-invoice-poc.jar digest [days] config.properties
 ```
 
 `days` defaults to 1 (today). This calls `queryInvoiceDigest` and prints invoice number,
