@@ -1,0 +1,10 @@
+# NAV test technical-user credentials. Copy to config.properties and fill in.
+nav.baseUrl=https://api-test.onlineszamla.nav.gov.hu
+nav.login=
+nav.password=
+nav.signingKey=
+nav.exchangeKey=
+nav.taxNumber=
+# Software identification (18-char softwareId: 2-letter country + unique chars)
+nav.softwareId=HU00000000POC00001
+nav.softwareDevContact=dev@example.com

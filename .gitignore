@@ -1,0 +1,7 @@
+target/
+config.properties
+*.class
+.idea/
+*.iml
+
+dependency-reduced-pom.xml
