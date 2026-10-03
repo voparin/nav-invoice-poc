@@ -55,10 +55,15 @@ class SampleInvoiceFactoryTest {
     }
 
     @Test
-    void intraCommunity_isSchemaValid_andOutOfScope() throws Exception {
+    void intraCommunity_isSchemaValid_andVatExemptKBAET() throws Exception {
         byte[] xml = SampleInvoiceFactory.createIntraCommunityAcquisition(cfg(), "POC-I-1");
         assertValid(xml);
-        assertTrue(new String(xml, StandardCharsets.UTF_8).contains("vatOutOfScope"));
+        String s = new String(xml, StandardCharsets.UTF_8);
+        // Intra-Community supply of goods: VAT-exempt with case code KBAET (ÁFA tv. §89),
+        // customer is an EU taxpayer (customerVatStatus OTHER).
+        assertTrue(s.contains("vatExemption"));
+        assertTrue(s.contains("KBAET"));
+        assertTrue(s.contains("OTHER"));
     }
 
     @Test

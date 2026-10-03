@@ -107,9 +107,19 @@ Step 5: STORNO invoice POC-S-1759... (references POC-I-1759...)
 DONE. Query each transactionId via /queryTransactionStatus.
 ```
 
-A `transactionId` means NAV accepted the submission for asynchronous processing. The
-final processing result is queryable later via the `/queryTransactionStatus` operation
-(not implemented in this PoC).
+A `transactionId` means NAV **received** the submission and it passed synchronous
+validation. Processing is then asynchronous: NAV validates the invoice content in the
+background and the final verdict is `DONE` (accepted) or `ABORTED` (rejected). Check it
+with the built-in status command:
+
+```bash
+java -jar nav-invoice-poc-1.0.0.jar status <transactionId> config.properties
+```
+
+This prints each invoice's status plus any technical/business validation messages — the
+exact error codes and locations NAV reports, which is how you diagnose an `ABORTED`
+result. (The main run already waits for the base invoices behind MODIFY/STORNO to reach
+`DONE` before referencing them.)
 
 ## 5. Troubleshooting
 
@@ -132,12 +142,13 @@ submitted:
 | File | Invoice type | Distinguishing feature |
 | --- | --- | --- |
 | [`01-domestic-goods.xml`](examples/01-domestic-goods.xml) | belföldi termékértékesítés (domestic goods) | `vatPercentage` 0.27 |
-| [`02-intra-community-acquisition.xml`](examples/02-intra-community-acquisition.xml) | közösségen belüli termékbeszerzés (intra-Community acquisition) | `vatOutOfScope` |
-| [`03-modify.xml`](examples/03-modify.xml) | módosító számla (modify) | `invoiceReference` → original |
+| [`02-intra-community-supply.xml`](examples/02-intra-community-supply.xml) | közösségen belüli termékértékesítés (intra-Community supply) | `vatExemption` case `KBAET`, customer `OTHER` |
+| [`03-modify.xml`](examples/03-modify.xml) | módosító számla (modify) | `invoiceReference` + `lineModificationReference` |
 | [`04-storno.xml`](examples/04-storno.xml) | érvénytelenítő számla (storno) | `invoiceReference` + negated amounts |
 
 These use a placeholder supplier tax number (`12345678`); the running tool substitutes
-your own `nav.taxNumber`. All four validate against the official NAV `invoiceData.xsd`.
+your own `nav.taxNumber`. All four validate against the official NAV `invoiceData.xsd`,
+and all four have been verified to reach **`DONE`** (fully accepted) in NAV's test system.
 
 ## 7. Building from source (optional)
 

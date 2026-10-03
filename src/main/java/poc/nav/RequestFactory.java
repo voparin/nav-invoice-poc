@@ -70,6 +70,25 @@ public final class RequestFactory {
         return req;
     }
 
+    /** Build a signed QueryTransactionStatusRequest (non-manageInvoice signature form). */
+    public QueryTransactionStatusRequest buildQueryTransactionStatus(String transactionId,
+                                                                     boolean returnOriginalRequest) {
+        String requestId = newRequestId();
+        ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+        now = now.withNano((now.getNano() / 1_000_000) * 1_000_000);
+
+        QueryTransactionStatusRequest req = api.createQueryTransactionStatusRequest();
+        req.setHeader(header(requestId, now));
+        String sig = CryptoUtil.sha3_512Upper(requestId + now.format(SIG_TS) + cfg.signingKey());
+        req.setUser(user(sig));
+        req.setSoftware(software());
+        req.setTransactionId(transactionId);
+        if (returnOriginalRequest) {
+            req.setReturnOriginalRequest(Boolean.TRUE);
+        }
+        return req;
+    }
+
     private BasicHeaderType header(String requestId, ZonedDateTime now) {
         BasicHeaderType h = new BasicHeaderType();
         h.setRequestId(requestId);

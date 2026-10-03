@@ -58,6 +58,16 @@ public final class SampleInvoiceFactory {
             ObjectFactory of = new ObjectFactory();
             InvoiceData data = buildData(of, cfg, invoiceNumber);
             InvoiceType invoice = data.getInvoiceMain().getInvoice();
+            // Intra-Community supply: customer is an EU taxpayer in another member state
+            // (customerVatStatus=OTHER + communityVatNumber), not a domestic customer.
+            CustomerInfoType customer = of.createCustomerInfoType();
+            customer.setCustomerVatStatus(CustomerVatStatusType.OTHER);
+            CustomerVatDataType vatData = of.createCustomerVatDataType();
+            vatData.setCommunityVatNumber("DE123456789");
+            customer.setCustomerVatData(vatData);
+            customer.setCustomerName("PoC EU Customer GmbH");
+            customer.setCustomerAddress(buildAddress());
+            invoice.getInvoiceHead().setCustomerInfo(customer);
             invoice.setInvoiceLines(outOfScopeLines(of));
             invoice.setInvoiceSummary(outOfScopeSummary(of));
             return marshal(data);
@@ -74,7 +84,9 @@ public final class SampleInvoiceFactory {
             InvoiceData data = buildData(of, cfg, invoiceNumber);
             InvoiceType invoice = data.getInvoiceMain().getInvoice();
             invoice.setInvoiceReference(invoiceReference(of, originalInvoiceNumber, modificationIndex));
-            invoice.setInvoiceLines(domesticLines(of, false));
+            LinesType lines = domesticLines(of, false);
+            addLineModificationReference(of, lines);
+            invoice.setInvoiceLines(lines);
             invoice.setInvoiceSummary(domesticSummary(of, false));
             return marshal(data);
         } catch (Exception e) {
@@ -90,12 +102,30 @@ public final class SampleInvoiceFactory {
             InvoiceData data = buildData(of, cfg, invoiceNumber);
             InvoiceType invoice = data.getInvoiceMain().getInvoice();
             invoice.setInvoiceReference(invoiceReference(of, originalInvoiceNumber, modificationIndex));
-            invoice.setInvoiceLines(domesticLines(of, true));
+            LinesType lines = domesticLines(of, true);
+            addLineModificationReference(of, lines);
+            invoice.setInvoiceLines(lines);
             invoice.setInvoiceSummary(domesticSummary(of, true));
             return marshal(data);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to build storno invoice", e);
         }
+    }
+
+    /**
+     * Mark the (single) line's modification type — required for modifying documents.
+     * On a modify/storno invoice NAV requires lineOperation=CREATE. The line's own
+     * lineNumber must still start at 1 within this document (monotonic from 1), while
+     * lineNumberReference points into the invoice chain as a sequential increment past
+     * the base invoice's existing line 1 — i.e. 2.
+     */
+    private static void addLineModificationReference(ObjectFactory of, LinesType lines) {
+        LineType line = lines.getLine().get(0);
+        line.setLineNumber(BigInteger.ONE);
+        LineModificationReferenceType ref = of.createLineModificationReferenceType();
+        ref.setLineNumberReference(BigInteger.TWO);
+        ref.setLineOperation(LineOperationType.CREATE);
+        line.setLineModificationReference(ref);
     }
 
     // --- shared construction -------------------------------------------------
@@ -179,6 +209,7 @@ public final class SampleInvoiceFactory {
         line.setLineExpressionIndicator(true);
         line.setLineDescription("PoC item");
         line.setQuantity(sign(BigDecimal.ONE, negate));
+        line.setUnitOfMeasure(UnitOfMeasureType.PIECE);
         line.setUnitPrice(NET);
 
         LineAmountsNormalType amt = of.createLineAmountsNormalType();
@@ -241,14 +272,15 @@ public final class SampleInvoiceFactory {
         return summary;
     }
 
-    // --- intra-Community (vatOutOfScope, VAT = 0, net = gross) ---------------
+    // --- intra-Community supply (vatExemption KBAET, VAT = 0, net = gross) ----
 
-    private static VatRateType outOfScopeRate(ObjectFactory of) {
+    private static VatRateType exemptRate(ObjectFactory of) {
         VatRateType rate = of.createVatRateType();
         DetailedReasonType reason = of.createDetailedReasonType();
-        reason.setCase("K");
-        reason.setReason("Kozossegen beluli beszerzes");
-        rate.setVatOutOfScope(reason);
+        // KBAET = VAT-exempt intra-Community supply of goods (ÁFA tv. §89)
+        reason.setCase("KBAET");
+        reason.setReason("Adomentes Kozossegen beluli termekertekesites");
+        rate.setVatExemption(reason);
         return rate;
     }
 
@@ -260,6 +292,7 @@ public final class SampleInvoiceFactory {
         line.setLineExpressionIndicator(true);
         line.setLineDescription("PoC intra-Community item");
         line.setQuantity(BigDecimal.ONE);
+        line.setUnitOfMeasure(UnitOfMeasureType.PIECE);
         line.setUnitPrice(NET);
 
         LineAmountsNormalType amt = of.createLineAmountsNormalType();
@@ -268,7 +301,7 @@ public final class SampleInvoiceFactory {
         netData.setLineNetAmountHUF(NET);
         amt.setLineNetAmountData(netData);
 
-        amt.setLineVatRate(outOfScopeRate(of));
+        amt.setLineVatRate(exemptRate(of));
 
         LineVatDataType vatData = of.createLineVatDataType();
         vatData.setLineVatAmount(BigDecimal.ZERO);
@@ -290,7 +323,7 @@ public final class SampleInvoiceFactory {
         SummaryNormalType sn = of.createSummaryNormalType();
 
         SummaryByVatRateType byRate = of.createSummaryByVatRateType();
-        byRate.setVatRate(outOfScopeRate(of));
+        byRate.setVatRate(exemptRate(of));
         VatRateNetDataType snet = of.createVatRateNetDataType();
         snet.setVatRateNetAmount(NET);
         snet.setVatRateNetAmountHUF(NET);
