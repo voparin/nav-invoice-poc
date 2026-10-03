@@ -22,6 +22,8 @@ import hu.gov.nav.schemas.osa._3_0.api.ManageInvoiceRequest;
 import hu.gov.nav.schemas.osa._3_0.api.ManageInvoiceResponse;
 import hu.gov.nav.schemas.osa._3_0.api.QueryTransactionStatusRequest;
 import hu.gov.nav.schemas.osa._3_0.api.QueryTransactionStatusResponse;
+import hu.gov.nav.schemas.osa._3_0.api.QueryInvoiceDigestRequest;
+import hu.gov.nav.schemas.osa._3_0.api.QueryInvoiceDigestResponse;
 import hu.gov.nav.schemas.osa._3_0.api.TokenExchangeRequest;
 import hu.gov.nav.schemas.osa._3_0.api.TokenExchangeResponse;
 
@@ -59,6 +61,10 @@ public final class NavClient {
 
     public QueryTransactionStatusResponse queryTransactionStatus(QueryTransactionStatusRequest req) {
         return post("queryTransactionStatus", req, QueryTransactionStatusResponse.class);
+    }
+
+    public QueryInvoiceDigestResponse queryInvoiceDigest(QueryInvoiceDigestRequest req) {
+        return post("queryInvoiceDigest", req, QueryInvoiceDigestResponse.class);
     }
 
     private <T> T post(String op, Object requestObj, Class<T> responseType) {

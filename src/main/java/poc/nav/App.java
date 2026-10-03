@@ -8,6 +8,8 @@ import hu.gov.nav.schemas.osa._3_0.api.ManageInvoiceResponse;
 import hu.gov.nav.schemas.osa._3_0.api.TokenExchangeResponse;
 import hu.gov.nav.schemas.osa._3_0.api.ManageInvoiceRequest;
 import hu.gov.nav.schemas.osa._3_0.api.QueryTransactionStatusResponse;
+import hu.gov.nav.schemas.osa._3_0.api.QueryInvoiceDigestResponse;
+import hu.gov.nav.schemas.osa._3_0.api.InvoiceDigestType;
 import hu.gov.nav.schemas.osa._3_0.api.ProcessingResultType;
 import hu.gov.nav.schemas.osa._3_0.api.BusinessValidationResultType;
 import hu.gov.nav.schemas.osa._3_0.api.PointerType;
@@ -35,6 +37,14 @@ public final class App {
                 String transactionId = args[1];
                 String configPath = args.length > 2 ? args[2] : "config.properties";
                 queryStatus(Config.fromFile(configPath), transactionId);
+                return;
+            }
+
+            if (args.length > 0 && args[0].equals("digest")) {
+                // digest [days] [config] — list OUTBOUND invoices issued in the last N days
+                int days = args.length > 1 ? Integer.parseInt(args[1]) : 1;
+                String configPath = args.length > 2 ? args[2] : "config.properties";
+                queryDigest(Config.fromFile(configPath), days);
                 return;
             }
 
@@ -186,6 +196,33 @@ public final class App {
         if (p.getValue() != null) sb.append(" value=").append(p.getValue());
         if (p.getLine() != null)  sb.append(" line=").append(p.getLine());
         return sb.length() == 0 ? "" : " (" + sb.toString().trim() + ")";
+    }
+
+    /** Query NAV for OUTBOUND invoices issued in the last N days and list them. */
+    private static void queryDigest(Config cfg, int days) {
+        RequestFactory factory = new RequestFactory(cfg);
+        NavClient client = new NavClient(cfg);
+        java.time.LocalDate to = java.time.LocalDate.now();
+        java.time.LocalDate from = to.minusDays(Math.max(0, days - 1));
+        System.out.println("Querying OUTBOUND invoices for taxpayer " + cfg.taxNumber()
+            + " issued " + from + " .. " + to + " ...");
+        QueryInvoiceDigestResponse resp = client.queryInvoiceDigest(
+            factory.buildQueryInvoiceDigest(from, to, 1));
+        if (resp.getInvoiceDigestResult() == null
+                || resp.getInvoiceDigestResult().getInvoiceDigest().isEmpty()) {
+            System.out.println("  No invoices returned by NAV for this range.");
+            return;
+        }
+        int n = 0;
+        for (InvoiceDigestType d : resp.getInvoiceDigestResult().getInvoiceDigest()) {
+            System.out.printf("  %-18s %-7s %-10s issued %s supplier %s%n",
+                d.getInvoiceNumber(), d.getInvoiceOperation(), d.getInvoiceCategory(),
+                d.getInvoiceIssueDate(), d.getSupplierTaxNumber());
+            n++;
+        }
+        System.out.println("  " + n + " invoice(s) stored at NAV (page "
+            + resp.getInvoiceDigestResult().getCurrentPage() + "/"
+            + resp.getInvoiceDigestResult().getAvailablePage() + ").");
     }
 
     private static void printTx(String label, ManageInvoiceResponse resp) {

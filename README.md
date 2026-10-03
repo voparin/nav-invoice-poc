@@ -86,7 +86,7 @@ nav.softwareDevContact=you@example.com
 ## 4. Run
 
 ```bash
-java -jar nav-invoice-poc-1.2.0.jar config.properties
+java -jar nav-invoice-poc-1.3.0.jar config.properties
 ```
 
 (If you omit the argument it defaults to `config.properties` in the current directory.)
@@ -113,13 +113,27 @@ background and the final verdict is `DONE` (accepted) or `ABORTED` (rejected). C
 with the built-in status command:
 
 ```bash
-java -jar nav-invoice-poc-1.2.0.jar status <transactionId> config.properties
+java -jar nav-invoice-poc-1.3.0.jar status <transactionId> config.properties
 ```
 
 This prints each invoice's status plus any technical/business validation messages — the
 exact error codes and locations NAV reports, which is how you diagnose an `ABORTED`
 result. (The main run already waits for the base invoices behind MODIFY/STORNO to reach
 `DONE` before referencing them.)
+
+### Listing invoices stored at NAV
+
+To confirm invoices are actually stored on NAV's side — independent of the (unreliable)
+test web UI — list the outbound invoices NAV has for your taxpayer:
+
+```bash
+java -jar nav-invoice-poc-1.3.0.jar digest [days] config.properties
+```
+
+`days` defaults to 1 (today). This calls `queryInvoiceDigest` and prints invoice number,
+operation, category, issue date, and supplier tax number for each invoice NAV returns —
+proof the data is persisted. Note: the NAV **test** portal's browse view does not reliably
+show submitted invoices even when they are accepted (`DONE`) and queryable here.
 
 ## 5. Troubleshooting
 
@@ -132,6 +146,7 @@ result. (The main run already waits for the base invoices behind MODIFY/STORNO t
 | `NAV rejected a request: ... INVALID_EXCHANGE_TOKEN` | A NAV exchange token is single-use — request a fresh `tokenExchange` before each `manageInvoice`. (This tool already does so.) |
 | `unable to find valid certification path` (TLS) | Your Java trust store is missing the Microsec e‑Szigno root CA that NAV uses. Import it into the JRE's `cacerts`, or use a JRE whose trust store includes it. |
 | `HTTP connect timed out` | NAV's test endpoint is unreachable from your network at the moment (or a VPN/firewall is blocking outbound 443 to it). Retry later / off the restricted network. |
+| Submitted invoices don't appear in the web portal | Two causes: (1) the NAV **test** portal does not reliably display submitted invoices even when accepted — use `digest` to confirm they're stored; (2) you may be viewing a different taxpayer than the one the technical user belongs to (invoices appear under the **supplier** taxpayer, as **outgoing/issued**, filtered by issue date). Old `ABORTED` submissions also generate failure emails that remain in your inbox — check the transaction ID against current runs. |
 
 ## 6. Example invoices
 
@@ -155,7 +170,7 @@ and all four have been verified to reach **`DONE`** (fully accepted) in NAV's te
 If you have the source and want to rebuild the jar:
 
 ```bash
-mvn -q package              # runs tests, produces target/nav-invoice-poc-1.2.0.jar
+mvn -q package              # runs tests, produces target/nav-invoice-poc-1.3.0.jar
 mvn -q exec:java            # or run directly against config.properties
 ```
 

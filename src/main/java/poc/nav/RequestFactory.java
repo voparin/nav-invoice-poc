@@ -89,6 +89,42 @@ public final class RequestFactory {
         return req;
     }
 
+    /** Build a signed QueryInvoiceDigest request for OUTBOUND invoices in a date range. */
+    public QueryInvoiceDigestRequest buildQueryInvoiceDigest(java.time.LocalDate from,
+                                                             java.time.LocalDate to, int page) {
+        String requestId = newRequestId();
+        ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+        now = now.withNano((now.getNano() / 1_000_000) * 1_000_000);
+
+        QueryInvoiceDigestRequest req = api.createQueryInvoiceDigestRequest();
+        req.setHeader(header(requestId, now));
+        String sig = CryptoUtil.sha3_512Upper(requestId + now.format(SIG_TS) + cfg.signingKey());
+        req.setUser(user(sig));
+        req.setSoftware(software());
+        req.setPage(page);
+        req.setInvoiceDirection(InvoiceDirectionType.OUTBOUND);
+
+        InvoiceQueryParamsType params = api.createInvoiceQueryParamsType();
+        MandatoryQueryParamsType mandatory = api.createMandatoryQueryParamsType();
+        DateIntervalParamType interval = api.createDateIntervalParamType();
+        interval.setDateFrom(toXmlDate(from));
+        interval.setDateTo(toXmlDate(to));
+        mandatory.setInvoiceIssueDate(interval);
+        params.setMandatoryQueryParams(mandatory);
+        req.setInvoiceQueryParams(params);
+        return req;
+    }
+
+    private static XMLGregorianCalendar toXmlDate(java.time.LocalDate d) {
+        try {
+            return DatatypeFactory.newInstance().newXMLGregorianCalendarDate(
+                d.getYear(), d.getMonthValue(), d.getDayOfMonth(),
+                DatatypeConstants.FIELD_UNDEFINED);
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     private BasicHeaderType header(String requestId, ZonedDateTime now) {
         BasicHeaderType h = new BasicHeaderType();
         h.setRequestId(requestId);
