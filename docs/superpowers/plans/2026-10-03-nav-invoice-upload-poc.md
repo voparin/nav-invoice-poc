@@ -1597,9 +1597,9 @@ an executable jar with `Main-Class: poc.nav.App`:
 ```bash
 export JAVA_HOME="/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home"; export PATH="$JAVA_HOME/bin:/opt/homebrew/opt/maven/bin:$PATH"
 cd /Users/I778468/src/apeh && mvn -q -DskipTests package
-ls -lh target/nav-invoice-poc-1.0.0.jar
+ls -lh target/nav-invoice-poc-1.2.0.jar
 # Run with no config to confirm it starts and gives the clear config error (proves the jar is wired, needs no Maven):
-java -jar target/nav-invoice-poc-1.0.0.jar /tmp/does-not-exist.properties; echo "exit=$?"
+java -jar target/nav-invoice-poc-1.2.0.jar /tmp/does-not-exist.properties; echo "exit=$?"
 ```
 Expected: the jar exists (several MB, deps inside); running it prints a clear
 "Configuration problem: Cannot read config file ..." and exits non-zero. This proves the
@@ -1614,7 +1614,7 @@ NAV **test** technical-user credentials and how to get them (register a primary 
 onlineszamla-test.nav.gov.hu → create a technical user → generate signing + exchange keys
 → grant invoice-submission permission → use the first 8 digits of the test tax number);
 how to configure (`cp config.properties.example config.properties`, fill the 5 values +
-an 18-char softwareId); how to run (`java -jar nav-invoice-poc-1.0.0.jar config.properties`);
+an 18-char softwareId); how to run (`java -jar nav-invoice-poc-1.2.0.jar config.properties`);
 what success looks like (four `transactionId`s printed); and a security note (test
 endpoint only, credentials stay local, never commit `config.properties`).
 
@@ -1626,7 +1626,7 @@ grep -q "target/" .gitignore && echo "target/ already ignored"   # it is (Task 1
 git add pom.xml README.md
 git commit -m "chore: package as runnable fat JAR (shade) + add README for sharing"
 ```
-Hand-off to the friend = the built `target/nav-invoice-poc-1.0.0.jar` (sent directly /
+Hand-off to the friend = the built `target/nav-invoice-poc-1.2.0.jar` (sent directly /
 via a release artifact, NOT via git) + `config.properties.example` + `README.md`.
 
 ---

@@ -86,7 +86,7 @@ nav.softwareDevContact=you@example.com
 ## 4. Run
 
 ```bash
-java -jar nav-invoice-poc-1.0.0.jar config.properties
+java -jar nav-invoice-poc-1.2.0.jar config.properties
 ```
 
 (If you omit the argument it defaults to `config.properties` in the current directory.)
@@ -113,7 +113,7 @@ background and the final verdict is `DONE` (accepted) or `ABORTED` (rejected). C
 with the built-in status command:
 
 ```bash
-java -jar nav-invoice-poc-1.0.0.jar status <transactionId> config.properties
+java -jar nav-invoice-poc-1.2.0.jar status <transactionId> config.properties
 ```
 
 This prints each invoice's status plus any technical/business validation messages — the
@@ -155,7 +155,7 @@ and all four have been verified to reach **`DONE`** (fully accepted) in NAV's te
 If you have the source and want to rebuild the jar:
 
 ```bash
-mvn -q package              # runs tests, produces target/nav-invoice-poc-1.0.0.jar
+mvn -q package              # runs tests, produces target/nav-invoice-poc-1.2.0.jar
 mvn -q exec:java            # or run directly against config.properties
 ```
 
