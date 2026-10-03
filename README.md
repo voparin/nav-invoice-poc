@@ -123,7 +123,23 @@ final processing result is queryable later via the `/queryTransactionStatus` ope
 | `unable to find valid certification path` (TLS) | Your Java trust store is missing the Microsec e‑Szigno root CA that NAV uses. Import it into the JRE's `cacerts`, or use a JRE whose trust store includes it. |
 | `HTTP connect timed out` | NAV's test endpoint is unreachable from your network at the moment (or a VPN/firewall is blocking outbound 443 to it). Retry later / off the restricted network. |
 
-## 6. Building from source (optional)
+## 6. Example invoices
+
+The exact `invoiceData` XML the tool generates for each of the four types is checked in
+under [`examples/`](examples/) so you can see the structure that gets base64-encoded and
+submitted:
+
+| File | Invoice type | Distinguishing feature |
+| --- | --- | --- |
+| [`01-domestic-goods.xml`](examples/01-domestic-goods.xml) | belföldi termékértékesítés (domestic goods) | `vatPercentage` 0.27 |
+| [`02-intra-community-acquisition.xml`](examples/02-intra-community-acquisition.xml) | közösségen belüli termékbeszerzés (intra-Community acquisition) | `vatOutOfScope` |
+| [`03-modify.xml`](examples/03-modify.xml) | módosító számla (modify) | `invoiceReference` → original |
+| [`04-storno.xml`](examples/04-storno.xml) | érvénytelenítő számla (storno) | `invoiceReference` + negated amounts |
+
+These use a placeholder supplier tax number (`12345678`); the running tool substitutes
+your own `nav.taxNumber`. All four validate against the official NAV `invoiceData.xsd`.
+
+## 7. Building from source (optional)
 
 If you have the source and want to rebuild the jar:
 
